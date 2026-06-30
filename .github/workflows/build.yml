@@ -13,24 +13,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Get Date
-      id: get-date
+    - name: Install System Dependencies
       run: |
-        echo "date=$(date -u +'%Y%m%d')" >> $GITHUB_OUTPUT
-      shell: bash
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
+          libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev \
+          libavformat-dev libavcodec-dev zlib1g-dev libsqlite3-dev \
+          libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+          gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly libgstreamer-plugins-base1.0-dev \
+          openjdk-17-jdk-headless unzip zip
 
-    - name: Cache Buildozer global directory
-      uses: actions/cache@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        path: ~/.buildozer
-        key: buildozer-global-${{ hashFiles('buildozer.spec') }}-${{ steps.get-date.outputs.date }}
+        python-version: '3.10'
+
+    - name: Install Buildozer and Cython
+      run: |
+        pip install --upgrade pip setuptools virtualenv
+        pip install Cython==0.29.33 buildozer
 
     - name: Build with Buildozer
-      uses: ArtemisBandi/buildozer-action@v1
-      with:
-        buildozer_version: master
-        command: buildozer -v android debug
-        repository_root: .
+      run: |
+        yes | buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
